@@ -15,6 +15,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +54,11 @@ fun CameraCaptureScreen(onNext: (String) -> Unit) {
         permissionLauncher.launch(Manifest.permission.CAMERA)
     }
 
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+
+@Composable
+fun CameraCaptureScreen(onNext: (String) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -127,6 +135,10 @@ fun CameraCaptureScreen(onNext: (String) -> Unit) {
 
             errorMessage.value?.let { message ->
                 Text(text = message, color = MaterialTheme.colorScheme.error)
+            }
+
+            Button(onClick = { onNext("content://demo/photo") }) {
+                Text(text = "Use Dummy Photo")
             }
         } else {
             Text(text = "Camera permission is required to show the preview.")
