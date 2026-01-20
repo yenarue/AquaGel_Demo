@@ -1,5 +1,8 @@
 package com.example.aquagel
 
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import android.Manifest
 import android.net.Uri
 import android.os.Bundle
