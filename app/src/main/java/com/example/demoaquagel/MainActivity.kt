@@ -1,7 +1,6 @@
 package com.example.demoaquagel
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,6 +42,7 @@ import androidx.core.net.toUri
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -140,7 +140,8 @@ fun AppRoot() {
 
 @Composable
 fun LiveMonitorScreen(onGoCamera: () -> Unit) {
-    val viewModel: MonitoringViewModel = viewModel()
+    val activity = LocalContext.current as ComponentActivity
+    val viewModel: MonitoringViewModel = viewModel(activity)
     val latestSample by viewModel.latestSample.collectAsStateWithLifecycle()
     val recentSamples by viewModel.recentSamples.collectAsStateWithLifecycle()
     val animatedTemperature by animateFloatAsState(
@@ -340,10 +341,13 @@ fun StageResultScreen(
     onBackToLive: () -> Unit
 ) {
     val viewModel: StageResultViewModel = viewModel()
+    val activity = LocalContext.current as ComponentActivity
+    val monitoringViewModel: MonitoringViewModel = viewModel(activity)
     val context = LocalContext.current
     val detectedStage by viewModel.detectedStage.collectAsStateWithLifecycle()
     val overrideStage by viewModel.overrideStage.collectAsStateWithLifecycle()
     val photoError by viewModel.photoError.collectAsStateWithLifecycle()
+    val recentSamples by monitoringViewModel.recentSamples.collectAsStateWithLifecycle()
     val stage = overrideStage ?: detectedStage
     val stageData = viewModel.stageDataFor(stage)
     var menuExpanded by remember { mutableStateOf(false) }
@@ -515,7 +519,12 @@ fun StageResultScreen(
             coroutineScope.launch {
                 try {
                     val file = withContext(Dispatchers.IO) {
-                        PdfReportGenerator.generateReport(context, stageData, decodedPhotoUri)
+                        PdfReportGenerator.generateReport(
+                            context,
+                            stageData,
+                            decodedPhotoUri,
+                            recentSamples
+                        )
                     }
                     val uri = FileProvider.getUriForFile(
                         context,
