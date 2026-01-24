@@ -23,20 +23,22 @@ class MonitoringViewModel : ViewModel() {
     val latestSample: StateFlow<MonitoringSample> = _latestSample.asStateFlow()
 
     private val recentBuffer = ArrayDeque<MonitoringSample>()
-    val recentSamples: List<MonitoringSample>
-        get() = recentBuffer.toList()
+    private val _recentSamples = MutableStateFlow<List<MonitoringSample>>(emptyList())
+    val recentSamples: StateFlow<List<MonitoringSample>> = _recentSamples.asStateFlow()
 
     init {
         recentBuffer.addLast(_latestSample.value)
+        _recentSamples.value = recentBuffer.toList()
         viewModelScope.launch {
             while (true) {
-                delay(random.nextLong(1000L, 2000L))
+                delay(1500L)
                 val sample = generateSample()
                 _latestSample.value = sample
                 recentBuffer.addLast(sample)
                 if (recentBuffer.size > 30) {
                     recentBuffer.removeFirst()
                 }
+                _recentSamples.value = recentBuffer.toList()
             }
         }
     }

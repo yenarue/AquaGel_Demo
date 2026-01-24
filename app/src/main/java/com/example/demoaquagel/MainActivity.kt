@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.Canvas
 import androidx.compose.material3.Card
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -69,6 +70,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -138,19 +142,20 @@ fun AppRoot() {
 fun LiveMonitorScreen(onGoCamera: () -> Unit) {
     val viewModel: MonitoringViewModel = viewModel()
     val latestSample by viewModel.latestSample.collectAsStateWithLifecycle()
+    val recentSamples by viewModel.recentSamples.collectAsStateWithLifecycle()
     val animatedTemperature by animateFloatAsState(
         targetValue = latestSample.temperature,
-        animationSpec = tween(durationMillis = 900),
+        animationSpec = tween(durationMillis = 1500),
         label = "temperature"
     )
     val animatedHumidity by animateFloatAsState(
         targetValue = latestSample.humidity,
-        animationSpec = tween(durationMillis = 900),
+        animationSpec = tween(durationMillis = 1500),
         label = "humidity"
     )
     val animatedImpedance by animateFloatAsState(
         targetValue = latestSample.impedance.toFloat(),
-        animationSpec = tween(durationMillis = 900),
+        animationSpec = tween(durationMillis = 1500),
         label = "impedance"
     )
 
@@ -175,19 +180,43 @@ fun LiveMonitorScreen(onGoCamera: () -> Unit) {
             label = "Temperature",
             value = String.format(Locale.US, "%.1f", animatedTemperature),
             unit = "°C"
-        )
+        ) {
+            LineChart(
+                samples = recentSamples,
+                valueSelector = { it.temperature },
+                minValue = 36.0f,
+                maxValue = 38.5f,
+                unit = "°C"
+            )
+        }
         Spacer(modifier = Modifier.height(12.dp))
         MetricCard(
             label = "Humidity",
             value = String.format(Locale.US, "%.1f", animatedHumidity),
             unit = "%"
-        )
+        ) {
+            LineChart(
+                samples = recentSamples,
+                valueSelector = { it.humidity },
+                minValue = 40.0f,
+                maxValue = 85.0f,
+                unit = "%"
+            )
+        }
         Spacer(modifier = Modifier.height(12.dp))
         MetricCard(
             label = "Impedance",
             value = String.format(Locale.US, "%.0f", animatedImpedance),
             unit = "Ω"
-        )
+        ) {
+            LineChart(
+                samples = recentSamples,
+                valueSelector = { it.impedance.toFloat() },
+                minValue = 350f,
+                maxValue = 900f,
+                unit = "Ω"
+            )
+        }
         Spacer(modifier = Modifier.height(24.dp))
         Button(onClick = onGoCamera) {
             Text(text = "Go to Healing Stage")
@@ -523,7 +552,12 @@ fun StageResultScreen(
 }
 
 @Composable
-fun MetricCard(label: String, value: String, unit: String) {
+fun MetricCard(
+    label: String,
+    value: String,
+    unit: String,
+    content: @Composable () -> Unit = {}
+) {
     Card {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -535,6 +569,93 @@ fun MetricCard(label: String, value: String, unit: String) {
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
+            Spacer(modifier = Modifier.height(6.dp))
+            content()
+        }
+    }
+}
+
+@Composable
+fun LineChart(
+    samples: List<MonitoringSample>,
+    valueSelector: (MonitoringSample) -> Float,
+    minValue: Float,
+    maxValue: Float,
+    unit: String
+) {
+    val lineColor = MaterialTheme.colorScheme.primary
+    val axisColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
+    val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+    ) {
+        if (samples.size < 2) {
+            return@Canvas
+        }
+        val width = size.width
+        val height = size.height
+        val leftPadding = 52f
+        val bottomPadding = 12f
+        val chartWidth = width - leftPadding
+        val chartHeight = height - bottomPadding
+        val gridLines = 3
+        for (i in 0..gridLines) {
+            val y = chartHeight - (chartHeight / gridLines) * i
+            drawLine(
+                color = gridColor,
+                start = Offset(leftPadding, y),
+                end = Offset(width, y),
+                strokeWidth = 1f
+            )
+        }
+        drawLine(
+            color = axisColor,
+            start = Offset(leftPadding, 0f),
+            end = Offset(leftPadding, chartHeight),
+            strokeWidth = 2f
+        )
+        drawLine(
+            color = axisColor,
+            start = Offset(leftPadding, chartHeight),
+            end = Offset(width, chartHeight),
+            strokeWidth = 2f
+        )
+        val textPaint = android.graphics.Paint().apply {
+            isAntiAlias = true
+            textSize = 20f
+            color = axisColor.toArgb()
+        }
+        drawContext.canvas.nativeCanvas.drawText(
+            String.format(Locale.US, "%.0f%s", maxValue, unit),
+            2f,
+            20f,
+            textPaint
+        )
+        drawContext.canvas.nativeCanvas.drawText(
+            String.format(Locale.US, "%.0f%s", minValue, unit),
+            2f,
+            chartHeight,
+            textPaint
+        )
+        val stepX = chartWidth / (samples.size - 1).coerceAtLeast(1)
+        var lastPoint: Offset? = null
+        samples.forEachIndexed { index, sample ->
+            val value = valueSelector(sample).coerceIn(minValue, maxValue)
+            val normalized = (value - minValue) / (maxValue - minValue)
+            val x = leftPadding + (stepX * index)
+            val y = chartHeight - (normalized * chartHeight)
+            val point = Offset(x, y)
+            lastPoint?.let { previous ->
+                drawLine(
+                    color = lineColor,
+                    start = previous,
+                    end = point,
+                    strokeWidth = 4f
+                )
+            }
+            lastPoint = point
         }
     }
 }
