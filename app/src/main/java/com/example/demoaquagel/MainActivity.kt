@@ -60,8 +60,14 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
+import androidx.core.content.FileProvider
+import android.content.Intent
 import java.util.Locale
 import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import androidx.compose.runtime.rememberCoroutineScope
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -304,6 +310,7 @@ fun StageResultScreen(photoUri: String?, onBackToLive: () -> Unit) {
     val stageData = viewModel.stageDataFor(stage)
     var menuExpanded by remember { mutableStateOf(false) }
     val decodedPhotoUri = photoUri?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+    val coroutineScope = rememberCoroutineScope()
     val statusIcon = when (stage) {
         HealingStage.STAGE_1 -> "!"
         HealingStage.STAGE_2 -> "●"
@@ -451,6 +458,29 @@ fun StageResultScreen(photoUri: String?, onBackToLive: () -> Unit) {
         Spacer(modifier = Modifier.height(24.dp))
         Button(onClick = onBackToLive) {
             Text(text = "Back to Live Monitoring")
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Button(onClick = {
+            coroutineScope.launch {
+                val file = withContext(Dispatchers.IO) {
+                    PdfReportGenerator.generateReport(context, stageData, decodedPhotoUri)
+                }
+                val uri = FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    file
+                )
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "application/pdf"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                context.startActivity(
+                    Intent.createChooser(shareIntent, "Share PDF report")
+                )
+            }
+        }) {
+            Text(text = "Export PDF Report")
         }
     }
 }
