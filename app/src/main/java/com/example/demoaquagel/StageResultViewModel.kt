@@ -43,16 +43,21 @@ class StageResultViewModel : ViewModel() {
     private val _overrideStage = MutableStateFlow<HealingStage?>(null)
     val overrideStage: StateFlow<HealingStage?> = _overrideStage.asStateFlow()
 
+    private val _photoError = MutableStateFlow<String?>(null)
+    val photoError: StateFlow<String?> = _photoError.asStateFlow()
+
     fun setPhotoUri(context: Context, uriString: String?) {
         if (uriString.isNullOrBlank()) {
             _photoUri.value = null
             _detectedStage.value = HealingStage.STAGE_2
+            _photoError.value = "Photo not available."
             return
         }
         if (_photoUri.value == uriString) {
             return
         }
         _photoUri.value = uriString
+        _photoError.value = null
         viewModelScope.launch {
             val stage = withContext(Dispatchers.Default) {
                 detectStageFromUri(context, uriString)
@@ -67,6 +72,13 @@ class StageResultViewModel : ViewModel() {
 
     fun clearOverride() {
         _overrideStage.value = null
+    }
+
+    fun resetDemo() {
+        _photoUri.value = null
+        _detectedStage.value = HealingStage.STAGE_2
+        _overrideStage.value = null
+        _photoError.value = null
     }
 
     fun stageDataFor(stage: HealingStage): StageData {
@@ -113,6 +125,7 @@ class StageResultViewModel : ViewModel() {
             bitmap.recycle()
             stage
         } catch (ex: Exception) {
+            _photoError.value = "Photo not available."
             HealingStage.STAGE_2
         }
     }
@@ -128,7 +141,11 @@ class StageResultViewModel : ViewModel() {
                 BitmapFactory.decodeStream(input, null, options)
             }
         } else {
-            FileInputStream(uri.path ?: return null).use { input ->
+            val path = uri.path ?: return null
+            if (!java.io.File(path).exists()) {
+                return null
+            }
+            FileInputStream(path).use { input ->
                 BitmapFactory.decodeStream(input, null, options)
             }
         }

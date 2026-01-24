@@ -62,6 +62,7 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.core.content.FileProvider
 import android.content.Intent
+import android.widget.Toast
 import java.util.Locale
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -120,6 +121,9 @@ fun AppRoot() {
                 ) { backStackEntry ->
                     StageResultScreen(
                         photoUri = backStackEntry.arguments?.getString("photoUri"),
+                        onRetake = {
+                            navController.popBackStack(Routes.CameraCapture, inclusive = false)
+                        },
                         onBackToLive = {
                             navController.popBackStack(Routes.LiveMonitor, inclusive = false)
                         }
@@ -301,11 +305,16 @@ fun CameraCaptureScreen(onGoStage: (String) -> Unit, onBack: () -> Unit) {
 }
 
 @Composable
-fun StageResultScreen(photoUri: String?, onBackToLive: () -> Unit) {
+fun StageResultScreen(
+    photoUri: String?,
+    onRetake: () -> Unit,
+    onBackToLive: () -> Unit
+) {
     val viewModel: StageResultViewModel = viewModel()
     val context = LocalContext.current
     val detectedStage by viewModel.detectedStage.collectAsStateWithLifecycle()
     val overrideStage by viewModel.overrideStage.collectAsStateWithLifecycle()
+    val photoError by viewModel.photoError.collectAsStateWithLifecycle()
     val stage = overrideStage ?: detectedStage
     val stageData = viewModel.stageDataFor(stage)
     var menuExpanded by remember { mutableStateOf(false) }
@@ -455,32 +464,60 @@ fun StageResultScreen(photoUri: String?, onBackToLive: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(16.dp))
         }
+        if (!photoError.isNullOrBlank()) {
+            Text(
+                text = photoError ?: "",
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.error
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
         Spacer(modifier = Modifier.height(24.dp))
+        Button(onClick = onRetake) {
+            Text(text = "Retake Photo")
+        }
+        Spacer(modifier = Modifier.height(12.dp))
         Button(onClick = onBackToLive) {
             Text(text = "Back to Live Monitoring")
         }
         Spacer(modifier = Modifier.height(12.dp))
         Button(onClick = {
             coroutineScope.launch {
-                val file = withContext(Dispatchers.IO) {
-                    PdfReportGenerator.generateReport(context, stageData, decodedPhotoUri)
+                try {
+                    val file = withContext(Dispatchers.IO) {
+                        PdfReportGenerator.generateReport(context, stageData, decodedPhotoUri)
+                    }
+                    val uri = FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.fileprovider",
+                        file
+                    )
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "application/pdf"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(
+                        Intent.createChooser(shareIntent, "Share PDF report")
+                    )
+                } catch (ex: Exception) {
+                    Toast.makeText(
+                        context,
+                        "Failed to generate PDF report.",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
-                val uri = FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.fileprovider",
-                    file
-                )
-                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                    type = "application/pdf"
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                context.startActivity(
-                    Intent.createChooser(shareIntent, "Share PDF report")
-                )
             }
         }) {
             Text(text = "Export PDF Report")
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Button(onClick = {
+            viewModel.resetDemo()
+            onBackToLive()
+        }) {
+            Text(text = "Reset Demo")
         }
     }
 }
