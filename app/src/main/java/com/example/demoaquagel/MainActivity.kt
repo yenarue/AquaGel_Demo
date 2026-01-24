@@ -280,7 +280,7 @@ fun CameraCaptureScreen(onGoStage: (String) -> Unit, onBack: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(text = "Camera Capture", style = MaterialTheme.typography.headlineMedium)
@@ -290,9 +290,22 @@ fun CameraCaptureScreen(onGoStage: (String) -> Unit, onBack: () -> Unit) {
                 factory = { previewView },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(320.dp)
+                    .weight(1f)
             )
             Spacer(modifier = Modifier.height(16.dp))
+        } else {
+            Text(
+                text = "Camera permission is required to capture a photo.",
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = {
+                permissionLauncher.launch(android.Manifest.permission.CAMERA)
+            }) {
+                Text(text = "Grant Permission")
+            }
+        }
+        if (hasPermission) {
             Button(onClick = {
                 val file = File(
                     context.cacheDir,
@@ -314,17 +327,6 @@ fun CameraCaptureScreen(onGoStage: (String) -> Unit, onBack: () -> Unit) {
                 )
             }) {
                 Text(text = "Capture Photo")
-            }
-        } else {
-            Text(
-                text = "Camera permission is required to capture a photo.",
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = {
-                permissionLauncher.launch(android.Manifest.permission.CAMERA)
-            }) {
-                Text(text = "Grant Permission")
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
