@@ -87,11 +87,11 @@ class StageResultViewModel : ViewModel() {
                 title = "Stage 1 — Wound Detected",
                 message = "Signs of early inflammation detected.",
                 cta = "Increase monitoring & consider care intervention",
-                gelColorLabel = "Yellow",
+                gelColorLabel = "Red",
                 temperature = "38.1",
                 humidity = "82",
                 impedance = "420",
-                colorArgb = Color.parseColor("#F1C40F")
+                colorArgb = Color.parseColor("#E74C3C")
             )
             HealingStage.STAGE_2 -> StageData(
                 title = "Stage 2 — Healing in Progress",
@@ -166,19 +166,28 @@ class StageResultViewModel : ViewModel() {
         var rSum = 0L
         var gSum = 0L
         var bSum = 0L
-        val total = cropWidth * cropHeight
-        for (y in 0 until cropHeight) {
-            for (x in 0 until cropWidth) {
+        var count = 0
+        val step = 4
+        var y = 0
+        while (y < cropHeight) {
+            var x = 0
+            while (x < cropWidth) {
                 val color = crop.getPixel(x, y)
                 rSum += Color.red(color)
                 gSum += Color.green(color)
                 bSum += Color.blue(color)
+                count += 1
+                x += step
             }
+            y += step
         }
         crop.recycle()
-        val rAvg = (rSum / total).toInt()
-        val gAvg = (gSum / total).toInt()
-        val bAvg = (bSum / total).toInt()
+        if (count == 0) {
+            return HealingStage.STAGE_2
+        }
+        val rAvg = (rSum / count).toInt()
+        val gAvg = (gSum / count).toInt()
+        val bAvg = (bSum / count).toInt()
 
         val hsv = FloatArray(3)
         Color.RGBToHSV(rAvg, gAvg, bAvg, hsv)
@@ -189,11 +198,14 @@ class StageResultViewModel : ViewModel() {
         if (saturation < 0.2f && value > 0.8f) {
             return HealingStage.STAGE_3
         }
-        if (hue in 40f..70f && saturation >= 0.5f) {
+        if (hue <= 20f || hue >= 340f) {
             return HealingStage.STAGE_1
         }
         if (hue in 40f..70f) {
             return HealingStage.STAGE_2
+        }
+        if (hue in 80f..150f) {
+            return HealingStage.STAGE_3
         }
         return HealingStage.STAGE_2
     }
