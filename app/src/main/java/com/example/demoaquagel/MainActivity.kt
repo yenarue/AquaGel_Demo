@@ -271,12 +271,12 @@ fun LiveMonitorScreen(onGoCamera: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = "Sensor data is being continuously collected.")
-            Spacer(modifier = Modifier.height(8.dp))
             Spacer(modifier = Modifier.weight(1f))
             MetricCard(
                 label = "Temperature",
                 value = String.format(Locale.US, "%.1f", animatedTemperature),
-                unit = "°C"
+                unit = "°C",
+                iconResId = R.drawable.temperature
             ) {
                 LineChart(
                     samples = recentSamples,
@@ -290,7 +290,8 @@ fun LiveMonitorScreen(onGoCamera: () -> Unit) {
             MetricCard(
                 label = "Humidity",
                 value = String.format(Locale.US, "%.1f", animatedHumidity),
-                unit = "%"
+                unit = "%",
+                iconResId = R.drawable.humidity
             ) {
                 LineChart(
                     samples = recentSamples,
@@ -304,7 +305,8 @@ fun LiveMonitorScreen(onGoCamera: () -> Unit) {
             MetricCard(
                 label = "Impedance",
                 value = String.format(Locale.US, "%.0f", animatedImpedance),
-                unit = "Ω"
+                unit = "Ω",
+                iconResId = R.drawable.impedance
             ) {
                 LineChart(
                     samples = recentSamples,
@@ -613,7 +615,7 @@ fun WoundInformationScreen(
         Spacer(modifier = Modifier.height(6.dp))
         Card(
             colors = CardDefaults.cardColors(
-                containerColor = Color.White.copy(alpha = 0.3f)
+                containerColor = Color.White.copy(alpha = 0.9f)
             )
         ) {
             Column(
@@ -627,18 +629,42 @@ fun WoundInformationScreen(
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
                 )
-                Text(
-                    text = "Temp : ${stageData.temperature}°C",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "Humidity : ${stageData.humidity}%",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "Impedance : ${stageData.impedance}Ω",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(id = R.drawable.temperature),
+                        contentDescription = "Temperature icon",
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Temp : ${stageData.temperature}°C",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(id = R.drawable.humidity),
+                        contentDescription = "Humidity icon",
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Humidity : ${stageData.humidity}%",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(id = R.drawable.impedance),
+                        contentDescription = "Impedance icon",
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Impedance : ${stageData.impedance}Ω",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
         }
         Spacer(modifier = Modifier.height(3.dp))
@@ -874,6 +900,7 @@ fun MetricCard(
     label: String,
     value: String,
     unit: String,
+    iconResId: Int? = null,
     content: @Composable () -> Unit = {}
 ) {
     Card(
@@ -885,11 +912,21 @@ fun MetricCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (iconResId != null) {
+                    Image(
+                        painter = painterResource(id = iconResId),
+                        contentDescription = "$label icon",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
             Text(
                 text = "$value $unit",
                 style = MaterialTheme.typography.headlineSmall,
