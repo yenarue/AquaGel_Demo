@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.material3.Card
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -32,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -67,12 +70,15 @@ import android.widget.Toast
 import java.util.Locale
 import java.io.File
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,6 +90,7 @@ class MainActivity : ComponentActivity() {
 }
 
 object Routes {
+    const val Splash = "splash"
     const val LiveMonitor = "live_monitor"
     const val CameraCapture = "camera_capture"
     const val StageResult = "stage_result"
@@ -97,8 +104,17 @@ fun AppRoot() {
         Surface(modifier = Modifier.fillMaxSize()) {
             NavHost(
                 navController = navController,
-                startDestination = Routes.LiveMonitor
+                startDestination = Routes.Splash
             ) {
+                composable(Routes.Splash) {
+                    SplashScreen(
+                        onDone = {
+                            navController.navigate(Routes.LiveMonitor) {
+                                popUpTo(Routes.Splash) { inclusive = true }
+                            }
+                        }
+                    )
+                }
                 composable(Routes.LiveMonitor) {
                     LiveMonitorScreen(
                         onGoCamera = { navController.navigate(Routes.CameraCapture) }
@@ -135,6 +151,40 @@ fun AppRoot() {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun SplashScreen(onDone: () -> Unit) {
+    LaunchedEffect(Unit) {
+        delay(1500L)
+        onDone()
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFF6BC8B8),
+                        Color(0xFF05C5B3)
+                    )
+                )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        val painter = painterResource(id = R.drawable.logo_akqua_gel)
+        val ratio = painter.intrinsicSize.width / painter.intrinsicSize.height
+        val safeRatio = if (ratio.isFinite() && ratio > 0f) ratio else 1f
+        Image(
+            painter = painter,
+            contentDescription = "AKQUA Gel Logo",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp)
+                .aspectRatio(safeRatio),
+            contentScale = ContentScale.Fit
+        )
     }
 }
 
