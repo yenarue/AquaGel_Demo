@@ -30,6 +30,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -44,6 +48,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -109,8 +114,29 @@ object Routes {
 @Composable
 fun AppRoot() {
     val navController = rememberNavController()
+    val colorScheme = if (isSystemInDarkTheme()) {
+        darkColorScheme(
+            primary = Color(0xFF00BBD3),
+            onPrimary = Color.White,
+            secondary = Color(0xFF05C5B3),
+            onSecondary = Color.White,
+            background = Color(0xFF0D1B1E),
+            surface = Color(0xFF0D1B1E),
+            onSurface = Color(0xFFE8F7F4)
+        )
+    } else {
+        lightColorScheme(
+            primary = Color(0xFF00BBD3),
+            onPrimary = Color.White,
+            secondary = Color(0xFF05C5B3),
+            onSecondary = Color.White,
+            background = Color(0xFFF7FFFD),
+            surface = Color.White,
+            onSurface = Color(0xFF0F2B2E)
+        )
+    }
 
-    MaterialTheme {
+    MaterialTheme(colorScheme = colorScheme) {
         Surface(modifier = Modifier.fillMaxSize()) {
             NavHost(
                 navController = navController,
@@ -220,26 +246,29 @@ fun LiveMonitorScreen(onGoCamera: () -> Unit) {
         label = "impedance"
     )
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        AppTopBarUserInfo(
-            name = "John Doe",
-            subtitle = "Infection Patient"
-        )
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            AppTopBarUserInfo(
+                name = "John Doe",
+                subtitle = "Infection Patient"
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
             Text(
                 text = "Current Wound Status\nLive Monitoring",
                 style = MaterialTheme.typography.headlineMedium,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = "Sensor data is being continuously collected.")
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.weight(1f))
             MetricCard(
                 label = "Temperature",
                 value = String.format(Locale.US, "%.1f", animatedTemperature),
@@ -281,9 +310,32 @@ fun LiveMonitorScreen(onGoCamera: () -> Unit) {
                     unit = "Ω"
                 )
             }
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(onClick = onGoCamera) {
-                Text(text = "Go to Healing Stage")
+            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.weight(1f))
+        }
+        }
+        FloatingActionButton(
+            onClick = onGoCamera,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(20.dp),
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(horizontal = 12.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = android.R.drawable.ic_menu_camera),
+                    contentDescription = "Wound Analyzer"
+                )
+                Text(
+                    text = "Wound Analyzer",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }
@@ -348,7 +400,7 @@ fun WoundInformationScreen(onGoStage: (String) -> Unit, onBack: () -> Unit) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
+                .padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -733,12 +785,20 @@ fun MetricCard(
     unit: String,
     content: @Composable () -> Unit = {}
 ) {
-    Card {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        )
+    ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(text = label, style = MaterialTheme.typography.titleSmall)
+            Text(
+                text = label,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
             Text(
                 text = "$value $unit",
                 style = MaterialTheme.typography.headlineSmall,
