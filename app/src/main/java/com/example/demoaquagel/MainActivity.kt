@@ -58,6 +58,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -425,7 +429,8 @@ fun WoundInformationScreen(onGoStage: (String) -> Unit, onBack: () -> Unit) {
                 }
             }
             if (hasPermission) {
-                Button(onClick = {
+                Button(
+                    onClick = {
                     val file = File(
                         context.cacheDir,
                         "capture_${System.currentTimeMillis()}.jpg"
@@ -444,13 +449,13 @@ fun WoundInformationScreen(onGoStage: (String) -> Unit, onBack: () -> Unit) {
                             }
                         }
                     )
-                }) {
-                    Text(text = "Capture Photo")
+                },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                ) {
+                    Text(text = "Tap to take a photo")
                 }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Button(onClick = onBack) {
-                Text(text = "Back")
             }
         }
     }
@@ -488,26 +493,15 @@ fun WoundInformationScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         AppTopBarTitle(
             title = "Wound Information",
-            onBack = onRetake
-        )
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stageData.title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.weight(1f)
-                )
-                TextButton(onClick = { menuExpanded = true }) {
-                    Text(text = "⋮")
+            onBack = onRetake,
+            titleWeight = FontWeight.Bold,
+            actions = {
+                IconButton(onClick = { menuExpanded = true }) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = "Options",
+                        tint = Color.White
+                    )
                 }
                 DropdownMenu(
                     expanded = menuExpanded,
@@ -543,7 +537,38 @@ fun WoundInformationScreen(
                     )
                 }
             }
-        Spacer(modifier = Modifier.height(20.dp))
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stageData.title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        Spacer(modifier = Modifier.height(3.dp))
         Row(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -563,57 +588,60 @@ fun WoundInformationScreen(
             }
             Box(
                 modifier = Modifier
-                    .size(56.dp)
-                    .clip(MaterialTheme.shapes.extraLarge)
-                    .background(Color(stageData.colorArgb))
-            )
-            Box(
-                modifier = Modifier
                     .height(18.dp)
                     .fillMaxWidth(0.5f)
                     .clip(MaterialTheme.shapes.small)
                     .background(Color(stageData.colorArgb))
             )
         }
-        Spacer(modifier = Modifier.height(12.dp))
         Text(
             text = stageData.gelColorLabel,
             style = MaterialTheme.typography.titleMedium
         )
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(2.dp))
         Text(
             text = stageData.message,
             style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.Bold,
         )
-        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = stageData.cta,
             style = MaterialTheme.typography.titleSmall,
             textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(20.dp))
-        Card {
+        Spacer(modifier = Modifier.height(6.dp))
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White.copy(alpha = 0.3f)
+            )
+        ) {
             Column(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(text = "Monitoring", style = MaterialTheme.typography.titleSmall)
                 Text(
-                    text = "Temp ${stageData.temperature}°C",
+                    modifier = Modifier.fillMaxWidth(),
+                    text = "Monitoring",
+                    style = MaterialTheme.typography.titleSmall,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = "Temp : ${stageData.temperature}°C",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    text = "Humidity ${stageData.humidity}%",
+                    text = "Humidity : ${stageData.humidity}%",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    text = "Impedance ${stageData.impedance}Ω",
+                    text = "Impedance : ${stageData.impedance}Ω",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(3.dp))
         if (!decodedPhotoUri.isNullOrBlank()) {
             AsyncImage(
                 model = decodedPhotoUri,
@@ -622,7 +650,7 @@ fun WoundInformationScreen(
                     .size(140.dp)
                     .clip(MaterialTheme.shapes.medium)
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(6.dp))
         }
         if (!photoError.isNullOrBlank()) {
             Text(
@@ -631,18 +659,48 @@ fun WoundInformationScreen(
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.error
             )
-            Spacer(modifier = Modifier.height(12.dp))
         }
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(onClick = onRetake) {
-            Text(text = "Retake Photo")
-        }
+                }
+            }
         Spacer(modifier = Modifier.height(12.dp))
-        Button(onClick = onBackToLive) {
-            Text(text = "Back to Live Monitoring")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Button(
+                onClick = onRetake,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(56.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Refresh,
+                    contentDescription = "Retake"
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Retake Photo")
+            }
+            Button(
+                onClick = onBackToLive,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(56.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Home,
+                    contentDescription = "Back"
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Back to Live Monitoring")
+            }
         }
-        Spacer(modifier = Modifier.height(12.dp))
-        Button(onClick = {
+        Spacer(modifier = Modifier.height(6.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Button(
+                onClick = {
             coroutineScope.launch {
                 try {
                     val file = withContext(Dispatchers.IO) {
@@ -674,22 +732,46 @@ fun WoundInformationScreen(
                     ).show()
                 }
             }
-        }) {
-            Text(text = "Export PDF Report")
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-            Button(onClick = {
-                viewModel.resetDemo()
-                onBackToLive()
-            }) {
+        },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(56.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Share,
+                    contentDescription = "Export"
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Export PDF")
+            }
+            Button(
+                onClick = {
+                    viewModel.resetDemo()
+                    onBackToLive()
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(56.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Refresh,
+                    contentDescription = "Reset"
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(text = "Reset Demo")
             }
         }
     }
 }
+}
 
 @Composable
-fun AppTopBarTitle(title: String, onBack: (() -> Unit)? = null) {
+fun AppTopBarTitle(
+    title: String,
+    onBack: (() -> Unit)? = null,
+    titleWeight: FontWeight = FontWeight.SemiBold,
+    actions: (@Composable () -> Unit)? = null
+) {
     val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Box(
         modifier = Modifier
@@ -724,9 +806,18 @@ fun AppTopBarTitle(title: String, onBack: (() -> Unit)? = null) {
             text = title,
             style = MaterialTheme.typography.titleLarge,
             color = Color.White,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = titleWeight,
             modifier = Modifier.padding(top = topInset)
         )
+        if (actions != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(top = topInset, end = 8.dp)
+            ) {
+                actions()
+            }
+        }
     }
 }
 
