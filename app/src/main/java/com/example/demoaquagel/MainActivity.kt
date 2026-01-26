@@ -236,17 +236,17 @@ fun LiveMonitorScreen(onGoCamera: () -> Unit) {
     val recentSamples by viewModel.recentSamples.collectAsStateWithLifecycle()
     val animatedTemperature by animateFloatAsState(
         targetValue = latestSample.temperature,
-        animationSpec = tween(durationMillis = 1500),
+        animationSpec = tween(durationMillis = 0),
         label = "temperature"
     )
     val animatedHumidity by animateFloatAsState(
         targetValue = latestSample.humidity,
-        animationSpec = tween(durationMillis = 1500),
+        animationSpec = tween(durationMillis = 0),
         label = "humidity"
     )
     val animatedImpedance by animateFloatAsState(
         targetValue = latestSample.impedance.toFloat(),
-        animationSpec = tween(durationMillis = 1500),
+        animationSpec = tween(durationMillis = 0),
         label = "impedance"
     )
 

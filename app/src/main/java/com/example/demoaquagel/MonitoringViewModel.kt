@@ -31,7 +31,7 @@ class MonitoringViewModel : ViewModel() {
         _recentSamples.value = recentBuffer.toList()
         viewModelScope.launch {
             while (true) {
-                delay(1500L)
+                delay(500L)
                 val sample = generateSample()
                 _latestSample.value = sample
                 recentBuffer.addLast(sample)
